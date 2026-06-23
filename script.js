@@ -1,38 +1,125 @@
 let current = 0;
 let score = 0;
 
-// ตัวแปรควบคุมเวลาในการเลือกคำตอบ (Hover/Cooldown)
+// ตัวแปรจับเวลา
+let timeLeft = 10; // ให้เวลาข้อละ 10 วินาที
+let timerInterval = null;
+
+// ตัวแปรการตรวจจับ AR
 let selectTimer = null;
 let isSelecting = false;
 let currentSelection = null; 
 
+// ตัวแปรสำหรับเอฟเฟกต์พลุ
+let particles = [];
+
+// ระบบเสียง Web Audio API (สร้างเสียงโดยไม่ต้องใช้ไฟล์)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'correct') { // เสียงปิ๊งป่อง (ถูก)
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+    } else if (type === 'wrong') { // เสียงแอ๊ดดด (ผิด)
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+        osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    } else if (type === 'tick') { // เสียงต๊อก (นับถอยหลัง)
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.06);
+    } else if (type === 'win') { // เสียงทาดาาา! (จบเกม)
+        osc.type = 'triangle';
+        [392, 523, 659, 784].forEach((f, i) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = 'triangle'; o.frequency.value = f;
+            o.connect(g); g.connect(audioCtx.destination);
+            g.gain.setValueAtTime(0.2, audioCtx.currentTime + i*0.1);
+            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i*0.1 + 0.5);
+            o.start(audioCtx.currentTime + i*0.1); o.stop(audioCtx.currentTime + i*0.1 + 0.5);
+        });
+    }
+}
+
+function startTimer() {
+    clearInterval(timerInterval);
+    timeLeft = 10;
+    const timerBar = document.getElementById("timer-bar");
+    timerBar.style.background = "linear-gradient(90deg, #00ff88, #00f0ff)";
+    
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        timerBar.style.width = (timeLeft * 10) + "%";
+        
+        if(timeLeft <= 3) {
+            timerBar.style.background = "#ff416c"; // เปลี่ยนเป็นสีแดงเมื่อเหลือ 3 วิ
+            playSound('tick');
+        }
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            timeOut();
+        }
+    }, 1000);
+}
+
+function timeOut() {
+    if (isSelecting) return;
+    isSelecting = true;
+    playSound('wrong');
+    document.getElementById("result").innerHTML = "⏰ หมดเวลา!";
+    document.getElementById("result").style.color = "#ff416c";
+    setTimeout(nextQuestion, 2000);
+}
+
 function showQuestion() {
-    document.getElementById("progress").value = current;
-    document.getElementById("number").innerHTML = "ข้อ " + (current + 1) + " / " + questions.length;
+    startTimer();
+    document.getElementById("number").innerHTML = "ข้อที่ " + (current + 1) + " / " + questions.length;
     document.getElementById("question").innerHTML = questions[current].question;
-    document.getElementById("btnA").innerHTML = "A : " + questions[current].A;
-    document.getElementById("btnB").innerHTML = "B : " + questions[current].B;
+    document.getElementById("btnA").innerHTML = "A: " + questions[current].A;
+    document.getElementById("btnB").innerHTML = "B: " + questions[current].B;
     document.getElementById("result").innerHTML = "";
     
-    // รีเซ็ตปุ่มให้เป็นสีปกติ
-    document.getElementById("btnA").style.background = "#f9f9f9";
-    document.getElementById("btnB").style.background = "#f9f9f9";
+    document.getElementById("btnA").style.transform = "scale(1)";
+    document.getElementById("btnB").style.transform = "scale(1)";
     isSelecting = false;
     currentSelection = null;
 }
 
 function checkAnswer(choice) {
-    if (isSelecting) return; // ป้องกันการกดซ้ำซ้อน
+    if (isSelecting) return;
     isSelecting = true;
+    clearInterval(timerInterval);
 
     if (choice == questions[current].answer) {
         score += 10;
         document.getElementById("score").innerHTML = "คะแนน : " + score;
-        document.getElementById("result").innerHTML = "✅ ตอบถูก";
+        document.getElementById("result").innerHTML = "🌟 ถูกต้องนะคร้าบบบ! 🌟";
+        document.getElementById("result").style.color = "#00ff88";
+        playSound('correct');
+        createExplosion(); // จุดพลุฉลอง
     } else {
-        document.getElementById("result").innerHTML = "❌ ตอบผิด";
+        document.getElementById("result").innerHTML = "💥 ผิดพลาดน่าเสียดาย! 💥";
+        document.getElementById("result").style.color = "#ff416c";
+        playSound('wrong');
     }
-    setTimeout(nextQuestion, 1500);
+    setTimeout(nextQuestion, 2000);
 }
 
 function nextQuestion() {
@@ -45,39 +132,40 @@ function nextQuestion() {
 }
 
 function finishGame() {
+    clearInterval(timerInterval);
+    playSound('win');
     let text = "";
-    if (score >= 80) text = "🏆 เยี่ยมมาก";
-    else if (score >= 60) text = "😊 ดีมาก";
-    else text = "📚 ลองฝึกอีกนิด";
+    if (score >= 80) text = "🏆 ระดับ: ปรมาจารย์ศิลปะ ม.1!";
+    else if (score >= 60) text = "😊 ระดับ: ศิลปินฝึกหัดฝีมือดี";
+    else text = "📚 ระดับ: ต้องเติมพลังความรู้เพิ่มด่วน!";
 
     document.querySelector(".card").innerHTML = `
-        <h1>🎉 จบเกม</h1>
-        <h2>คะแนน ${score}</h2>
-        <h2>${text}</h2>
-        <button onclick="location.reload()">เล่นอีกครั้ง</button>
+        <h1 style="font-size:4rem;">🎉 จบการแข่งขัน 🎉</h1>
+        <h2 style="font-size:3rem; color:#00f0ff;">คะแนนรวมของคุณคือ ${score} คะแนน</h2>
+        <h2 style="font-size:2.5rem; color:#ffb300;">${text}</h2>
+        <br>
+        <button onclick="location.reload()" style="max-width:300px; height:70px; background:linear-gradient(135deg, #00ff88, #00f0ff); color:#111;">
+ 🔄 เริ่มท้าทายใหม่
+        </button>
     `;
 }
 
 // ==========================================
-//  ระบบ AR & การตรวจจับมือ (MediaPipe)
+//  ระบบ AR & แอนิเมชันวาดเอฟเฟกต์ลง Canvas
 // ==========================================
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-// ตั้งค่าตำแหน่งปุ่มจำลองบน Canvas สำหรับให้ "นิ้วชี้" ชี้ไปโดน
-// อิงตามสัดส่วนวิดีโอ (สมมุติตากกล้องคือซ้าย-ขวา)
 const zones = {
-    A: { x: 80, y: 150, width: 140, height: 180, label: "ชี้ตรงนี้ตอบ A" },
-    B: { x: 420, y: 150, width: 140, height: 180, label: "ชี้ตรงนี้ตอบ B" }
+    A: { x: 50, y: 150, width: 150, height: 200, label: "ชี้ค้างตอบ A" },
+    B: { x: 440, y: 150, width: 150, height: 200, label: "ชี้ค้างตอบ B" }
 };
 
-// ฟังก์ชันเริ่มต้นกล้อง
 async function startCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
-            video: { width: 640, height: 480 },
-            audio: false
+            video: { width: 640, height: 480 }, audio: false
         });
         video.srcObject = stream;
     } catch (err) {
@@ -89,65 +177,86 @@ function syncCanvas() {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 }
-
 video.addEventListener("loadedmetadata", syncCanvas);
 
-// ฟังก์ชันที่จะทำงานทุกครั้งที่ MediaPipe ประมวลผลภาพเสร็จ
+// เอฟเฟกต์จุดระเบิดเมื่อตอบถูก
+function createExplosion() {
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            vx: (Math.random() - 0.5) * 15,
+            vy: (Math.random() - 0.5) * 15,
+            size: Math.random() * 6 + 4,
+            color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+            alpha: 1
+        });
+    }
+}
+
 function onResults(results) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. วาดกรอบสี่เหลี่ยม AR (ปุ่มสมมุติบนจอ)
-    drawARZones();
-
-    // 2. ถ้านิ้วมือโผล่เข้ามาในกล้อง
-    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-        for (const landmarks of results.multiHandLandmarks) {
-            
-            // ตำแหน่งพิกัดของ "ปลายนิ้วชี้" (Index Finger Tip คือจุดที่ 8 ใน MediaPipe)
-            // ทำการกลับด้านแกน X (Mirror) เพื่อให้ตรงกับเงาสะท้อนของเราในกล้อง
-            const indexTip = landmarks[8];
-            const fingerX = (1 - indexTip.x) * canvas.width; 
-            const fingerY = indexTip.y * canvas.height;
-
-            // วาดเป้าวงกลมสีแดงที่ปลายนิ้วชี้
-            ctx.beginPath();
-            ctx.arc(fingerX, fingerY, 12, 0, 2 * Math.PI);
-            ctx.fillStyle = "#ff4757";
-            ctx.fill();
-            ctx.strokeStyle = "white";
-            ctx.lineWidth = 3;
-            ctx.stroke();
-
-            // ตรวจสอบว่านิ้วชี้อยู่ในโซนปุ่ม A หรือ B ไหม
-            checkFingerInZone(fingerX, fingerY);
-        }
-    } else {
-        // ถ้านำมือออกจากกล้อง ให้ยกเลิกการนับเวลาถอยหลังเลือกคำตอบ
-        resetSelection();
-    }
-}
-
-// วาดกล่อง AR สองฝั่งซ้าย-ขวาบนจอภาพ
-function drawARZones() {
+    // วาดกล่อง AR สองฝั่ง
     for (const key in zones) {
         const zone = zones[key];
-        ctx.fillStyle = key === currentSelection ? "rgba(46, 213, 115, 0.4)" : "rgba(255, 255, 255, 0.2)";
-        ctx.fillRect(zone.x, zone.y, zone.width, zone.height);
+        let isHovered = (key === currentSelection);
         
-        ctx.strokeStyle = key === currentSelection ? "#2ed573" : "#ffa500";
-        ctx.lineWidth = 4;
+        ctx.fillStyle = isHovered ? "rgba(0, 255, 136, 0.3)" : "rgba(255, 255, 255, 0.15)";
+        ctx.fillRect(zone.x, zone.y, zone.width, zone.height);
+        ctx.strokeStyle = isHovered ? "#00ff88" : "#00f0ff";
+        ctx.lineWidth = isHovered ? 6 : 3;
         ctx.strokeRect(zone.x, zone.y, zone.width, zone.height);
 
         ctx.fillStyle = "white";
-        ctx.font = "bold 20px Arial";
-        ctx.fillText(zone.label, zone.x + 10, zone.y + 40);
+        ctx.font = "bold 22px Arial";
+        ctx.fillText(zone.label, zone.x + 15, zone.y + 40);
     }
+
+    // ตรวจจับมือ
+    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+        for (const landmarks of results.multiHandLandmarks) {
+            const indexTip = landmarks[8];
+            // ทำงานบนภาพ Mirror กลับด้านเพื่อให้เด็กไม่งงเวลาส่องทีวี
+            const fingerX = (1 - indexTip.x) * canvas.width; 
+            const fingerY = indexTip.y * canvas.height;
+
+            // วาดเอฟเฟกต์เป้าเล็งวงกลมวิบวับที่ปลายนิ้ว
+            ctx.beginPath();
+            ctx.arc(fingerX, fingerY, 15, 0, 2 * Math.PI);
+            ctx.fillStyle = "#ff007f";
+            ctx.fill();
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 4;
+            ctx.stroke();
+
+            checkFingerInZone(fingerX, fingerY);
+        }
+    } else {
+        resetSelection();
+    }
+
+    // อัปเดตและวาดพาร์ทิเคิลพลุระเบิด
+    particles.forEach((p, index) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 0.02;
+        if (p.alpha <= 0) {
+            particles.splice(index, 1);
+        } else {
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+            ctx.restore();
+        }
+    });
 }
 
-// เช็คว่านิ้วจิ้มค้างไว้ที่ปุ่มใดปุ่มหนึ่งหรือไม่ (ค้างไว้ 1.5 วินาทีเท่ากับเลือกข้อนั้น)
 function checkFingerInZone(x, y) {
     if (isSelecting) return;
-
     let detectedZone = null;
     for (const key in zones) {
         const zone = zones[key];
@@ -159,15 +268,12 @@ function checkFingerInZone(x, y) {
     if (detectedZone) {
         if (currentSelection !== detectedZone) {
             currentSelection = detectedZone;
+            document.getElementById(`btn${detectedZone}`).style.transform = "scale(1.1)";
             
-            // ไฮไลต์ปุ่มจริงที่อยู่ด้านล่างด้วยเพื่อความชัดเจน
-            document.getElementById(`btn${detectedZone}`).style.background = "#ffa500"; 
-
-            // ค้างไว้ 1.5 วินาที ค่อยส่งคำตอบ
             clearTimeout(selectTimer);
             selectTimer = setTimeout(() => {
                 checkAnswer(currentSelection);
-            }, 1500);
+            }, 1200); // ลดเวลาชี้ค้างเหลือ 1.2 วินาทีเพื่อให้เกมไวขึ้น เร้าใจขึ้น
         }
     } else {
         resetSelection();
@@ -178,34 +284,26 @@ function resetSelection() {
     if (isSelecting) return;
     clearTimeout(selectTimer);
     currentSelection = null;
-    document.getElementById("btnA").style.background = "#f9f9f9";
-    document.getElementById("btnB").style.background = "#f9f9f9";
+    document.getElementById("btnA").style.transform = "scale(1)";
+    document.getElementById("btnB").style.transform = "scale(1)";
 }
 
-// ตั้งค่าเรียกใช้ไลบรารี MediaPipe Hands
 const hands = new Hands({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
 });
-
 hands.setOptions({
-    maxNumHands: 1,                  // ตรวจจับมือแค่ข้างเดียวพอ
+    maxNumHands: 1,
     modelComplexity: 1,
-    minDetectionConfidence: 0.6,     // ความแม่นยำในการเจอตรวจมือ (60%)
+    minDetectionConfidence: 0.6,
     minTrackingConfidence: 0.6
 });
-
 hands.onResults(onResults);
 
-// ส่งเฟรมจากวิดีโอเข้าไปให้ AI ประมวลผลอย่างต่อเนื่อง
 const cameraUtils = new Camera(video, {
-    onFrame: async () => {
-        await hands.send({ image: video });
-    },
-    width: 640,
-    height: 480
+    onFrame: async () => { await hands.send({ image: video }); },
+    width: 640, height: 480
 });
 
-// เริ่มต้นระบบทั้งหมดหลังจากเปิดกล้อง
 startCamera().then(() => {
     cameraUtils.start();
     showQuestion();
