@@ -1,81 +1,38 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
-<title>Art Quiz AR</title>
-
-<link rel="stylesheet" href="style.css">
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Art Quiz AR</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
 <div class="card">
+    <h1>🎨 เกมตอบคำถามศิลปะ ม.1</h1>
 
-<h1>🎨 เกมตอบคำถามศิลปะ ม.1</h1>
+    <div class="camera">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+    </div>
 
-<div class="camera">
+    <h3 id="score">คะแนน : 0</h3>
+    <progress id="progress" value="0" max="10" style="width:90%;height:25px;"></progress>
+    <h3 id="number"></h3>
+    <h2 id="question"></h2>
 
-<video
-id="video"
-autoplay
-playsinline
-muted>
-</video>
-
-<canvas id="canvas"></canvas>
-
+    <button id="btnA" onclick="checkAnswer('A')"></button>
+    <br><br>
+    <button id="btnB" onclick="checkAnswer('B')"></button>
+    <br><br>
+    <h2 id="result"></h2>
 </div>
-
-<div class="camera">
-  <video id="video" autoplay playsinline muted></video>
-  <canvas id="canvas"></canvas>
-</div>
-
-<h3 id="score">คะแนน : 0</h3>
-
-<progress
-id="progress"
-value="0"
-max="10"
-style="width:90%;height:25px;">
-</progress>
-
-<h3 id="number"></h3>
-
-<h2 id="question"></h2>
-
-<button id="btnA"
-onclick="checkAnswer('A')">
-</button>
-
-<br><br>
-
-<button id="btnB"
-onclick="checkAnswer('B')">
-</button>
-
-<br><br>
-
-<h2 id="result"></h2>
-
-</div>
-
-<script src="questions.js"></script>
-
-<script src="script.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="questions.js"></script>
+<script src="script.js"></script>
   
 </body>
-
 </html>
