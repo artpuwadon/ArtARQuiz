@@ -1,55 +1,45 @@
 let current = 0;
 let score = 0;
-
-// ตัวแปรจับเวลา
-let timeLeft = 10; // ให้เวลาข้อละ 10 วินาที
+let timeLeft = 10;
 let timerInterval = null;
-
-// ตัวแปรการตรวจจับ AR
-let selectTimer = null;
 let isSelecting = false;
 let currentSelection = null; 
-
-// ตัวแปรสำหรับเอฟเฟกต์พลุ
+let selectTimer = null;
 let particles = [];
+let gameState = "MENU"; // สถานะเกม: MENU หรือ PLAYING
 
-// ระบบเสียง Web Audio API (สร้างเสียงโดยไม่ต้องใช้ไฟล์)
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playSound(type) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
+    osc.connect(gain); gain.connect(audioCtx.destination);
 
-    if (type === 'correct') { // เสียงปิ๊งป่อง (ถูก)
+    if (type === 'correct') {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15); // E5
+        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15);
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
         osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-    } else if (type === 'wrong') { // เสียงแอ๊ดดด (ผิด)
+    } else if (type === 'wrong') {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(150, audioCtx.currentTime);
         osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.4);
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
         osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-    } else if (type === 'tick') { // เสียงต๊อก (นับถอยหลัง)
+    } else if (type === 'tick') {
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(800, audioCtx.currentTime);
         gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
         osc.start(); osc.stop(audioCtx.currentTime + 0.06);
-    } else if (type === 'win') { // เสียงทาดาาา! (จบเกม)
-        osc.type = 'triangle';
+    } else if (type === 'win') {
         [392, 523, 659, 784].forEach((f, i) => {
-            const o = audioCtx.createOscillator();
-            const g = audioCtx.createGain();
-            o.type = 'triangle'; o.frequency.value = f;
-            o.connect(g); g.connect(audioCtx.destination);
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.type = 'triangle'; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
             g.gain.setValueAtTime(0.2, audioCtx.currentTime + i*0.1);
             g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i*0.1 + 0.5);
             o.start(audioCtx.currentTime + i*0.1); o.stop(audioCtx.currentTime + i*0.1 + 0.5);
@@ -57,21 +47,38 @@ function playSound(type) {
     }
 }
 
+// ฟังก์ชันเลือกหมวดหมู่คำถาม
+function selectCategory(key) {
+    questions = questionSets[key].data;
+    document.getElementById("set-title").innerHTML = questionSets[key].title;
+    
+    // สลับหน้าจอ
+    document.getElementById("menu-screen").style.display = "none";
+    document.getElementById("game-screen").style.display = "block";
+    
+    gameState = "PLAYING";
+    current = 0;
+    score = 0;
+    document.getElementById("score").innerHTML = "คะแนน : 0";
+    
+    playSound('correct');
+    showQuestion();
+}
+
 function startTimer() {
     clearInterval(timerInterval);
     timeLeft = 10;
     const timerBar = document.getElementById("timer-bar");
+    timerBar.style.width = "100%";
     timerBar.style.background = "linear-gradient(90deg, #00ff88, #00f0ff)";
     
     timerInterval = setInterval(() => {
         timeLeft--;
         timerBar.style.width = (timeLeft * 10) + "%";
-        
         if(timeLeft <= 3) {
-            timerBar.style.background = "#ff416c"; // เปลี่ยนเป็นสีแดงเมื่อเหลือ 3 วิ
+            timerBar.style.background = "#ff416c";
             playSound('tick');
         }
-
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
             timeOut();
@@ -113,7 +120,7 @@ function checkAnswer(choice) {
         document.getElementById("result").innerHTML = "🌟 ถูกต้องนะคร้าบบบ! 🌟";
         document.getElementById("result").style.color = "#00ff88";
         playSound('correct');
-        createExplosion(); // จุดพลุฉลอง
+        createExplosion();
     } else {
         document.getElementById("result").innerHTML = "💥 ผิดพลาดน่าเสียดาย! 💥";
         document.getElementById("result").style.color = "#ff416c";
@@ -135,17 +142,17 @@ function finishGame() {
     clearInterval(timerInterval);
     playSound('win');
     let text = "";
-    if (score >= 80) text = "🏆 ระดับ: ปรมาจารย์ศิลปะ ม.1!";
-    else if (score >= 60) text = "😊 ระดับ: ศิลปินฝึกหัดฝีมือดี";
+    if (score >= 40) text = "🏆 ระดับ: ปรมาจารย์ศิลปะ ม.1!";
+    else if (score >= 30) text = "😊 ระดับ: ศิลปินฝึกหัดฝีมือดี";
     else text = "📚 ระดับ: ต้องเติมพลังความรู้เพิ่มด่วน!";
 
-    document.querySelector(".card").innerHTML = `
+    document.getElementById("game-screen").innerHTML = `
         <h1 style="font-size:4rem;">🎉 จบการแข่งขัน 🎉</h1>
         <h2 style="font-size:3rem; color:#00f0ff;">คะแนนรวมของคุณคือ ${score} คะแนน</h2>
         <h2 style="font-size:2.5rem; color:#ffb300;">${text}</h2>
         <br>
-        <button onclick="location.reload()" style="max-width:300px; height:70px; background:linear-gradient(135deg, #00ff88, #00f0ff); color:#111;">
- 🔄 เริ่มท้าทายใหม่
+        <button onclick="location.reload()" style="max-width:300px; height:70px; background:linear-gradient(135deg, #00ff88, #00f0ff); color:#111; font-size:1.8rem; font-weight:bold; border-radius:15px; border:none; cursor:pointer;">
+ 🔄 กลับหน้าหลัก
         </button>
     `;
 }
@@ -157,9 +164,17 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-const zones = {
+// โซนจับคำตอบ A และ B ตอนเล่นเกม
+const playZones = {
     A: { x: 50, y: 150, width: 150, height: 200, label: "ชี้ค้างตอบ A" },
     B: { x: 440, y: 150, width: 150, height: 200, label: "ชี้ค้างตอบ B" }
+};
+
+// โซนจับเมนูสำหรับหน้าแรก (เรียง 3 ปุ่มแนวตั้งเสมือนบนจอ)
+const menuZones = {
+    elements: { x: 170, y: 80, width: 300, height: 80, label: "ชี้ค้างเลือกชุดที่ 1" },
+    colors:   { x: 170, y: 200, width: 300, height: 80, label: "ชี้ค้างเลือกชุดที่ 2" },
+    culture:  { x: 170, y: 320, width: 300, height: 80, label: "ชี้ค้างเลือกชุดที่ 3" }
 };
 
 async function startCamera() {
@@ -169,97 +184,88 @@ async function startCamera() {
         });
         video.srcObject = stream;
     } catch (err) {
-        alert("ไม่สามารถเปิดกล้องได้: " + err.message);
+        console.log("กล้องยังไม่พร้อมใช้งานบนหน้าจอเมนู");
     }
 }
 
 function syncCanvas() {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
 }
 video.addEventListener("loadedmetadata", syncCanvas);
 
-// เอฟเฟกต์จุดระเบิดเมื่อตอบถูก
 function createExplosion() {
     for (let i = 0; i < 40; i++) {
         particles.push({
-            x: canvas.width / 2,
-            y: canvas.height / 2,
-            vx: (Math.random() - 0.5) * 15,
-            vy: (Math.random() - 0.5) * 15,
+            x: canvas.width / 2, y: canvas.height / 2,
+            vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 15,
             size: Math.random() * 6 + 4,
-            color: `hsl(${Math.random() * 360}, 100%, 50%)`,
-            alpha: 1
+            color: `hsl(${Math.random() * 360}, 100%, 50%)`, alpha: 1
         });
     }
 }
 
 function onResults(results) {
+    syncCanvas();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // วาดกล่อง AR สองฝั่ง
-    for (const key in zones) {
-        const zone = zones[key];
+    // เลือกใช้โซนตรวจจับตามสถานะปัจจุบันของเกม
+    const activeZones = (gameState === "MENU") ? menuZones : playZones;
+
+    // วาดกล่อง AR ไกด์ไลน์บนจอทีวี
+    for (const key in activeZones) {
+        const zone = activeZones[key];
         let isHovered = (key === currentSelection);
         
-        ctx.fillStyle = isHovered ? "rgba(0, 255, 136, 0.3)" : "rgba(255, 255, 255, 0.15)";
+        ctx.fillStyle = isHovered ? "rgba(0, 255, 136, 0.25)" : "rgba(255, 255, 255, 0.1)";
         ctx.fillRect(zone.x, zone.y, zone.width, zone.height);
         ctx.strokeStyle = isHovered ? "#00ff88" : "#00f0ff";
-        ctx.lineWidth = isHovered ? 6 : 3;
+        ctx.lineWidth = isHovered ? 5 : 2;
         ctx.strokeRect(zone.x, zone.y, zone.width, zone.height);
 
         ctx.fillStyle = "white";
-        ctx.font = "bold 22px Arial";
-        ctx.fillText(zone.label, zone.x + 15, zone.y + 40);
+        ctx.font = "bold 18px Arial";
+        ctx.fillText(zone.label, zone.x + 15, zone.y + 45);
     }
 
     // ตรวจจับมือ
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         for (const landmarks of results.multiHandLandmarks) {
             const indexTip = landmarks[8];
-            // ทำงานบนภาพ Mirror กลับด้านเพื่อให้เด็กไม่งงเวลาส่องทีวี
             const fingerX = (1 - indexTip.x) * canvas.width; 
             const fingerY = indexTip.y * canvas.height;
 
-            // วาดเอฟเฟกต์เป้าเล็งวงกลมวิบวับที่ปลายนิ้ว
             ctx.beginPath();
             ctx.arc(fingerX, fingerY, 15, 0, 2 * Math.PI);
             ctx.fillStyle = "#ff007f";
             ctx.fill();
             ctx.strokeStyle = "white";
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3;
             ctx.stroke();
 
-            checkFingerInZone(fingerX, fingerY);
+            checkFingerInZone(fingerX, fingerY, activeZones);
         }
     } else {
         resetSelection();
     }
 
-    // อัปเดตและวาดพาร์ทิเคิลพลุระเบิด
+    // วาดเอฟเฟกต์พลุเฉลิมฉลอง
     particles.forEach((p, index) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.alpha -= 0.02;
-        if (p.alpha <= 0) {
-            particles.splice(index, 1);
-        } else {
-            ctx.save();
-            ctx.globalAlpha = p.alpha;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fillStyle = p.color;
-            ctx.fill();
+        p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
+        if (p.alpha <= 0) { particles.splice(index, 1); } 
+        else {
+            ctx.save(); ctx.globalAlpha = p.alpha; ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill();
             ctx.restore();
         }
     });
 }
 
-function checkFingerInZone(x, y) {
-    if (isSelecting) return;
+function checkFingerInZone(x, y, activeZones) {
+    if (isSelecting && gameState === "PLAYING") return;
     let detectedZone = null;
-    for (const key in zones) {
-        const zone = zones[key];
+    for (const key in activeZones) {
+        const zone = activeZones[key];
         if (x >= zone.x && x <= zone.x + zone.width && y >= zone.y && y <= zone.y + zone.height) {
             detectedZone = key;
         }
@@ -268,12 +274,15 @@ function checkFingerInZone(x, y) {
     if (detectedZone) {
         if (currentSelection !== detectedZone) {
             currentSelection = detectedZone;
-            document.getElementById(`btn${detectedZone}`).style.transform = "scale(1.1)";
             
             clearTimeout(selectTimer);
             selectTimer = setTimeout(() => {
-                checkAnswer(currentSelection);
-            }, 1200); // ลดเวลาชี้ค้างเหลือ 1.2 วินาทีเพื่อให้เกมไวขึ้น เร้าใจขึ้น
+                if (gameState === "MENU") {
+                    selectCategory(currentSelection);
+                } else {
+                    checkAnswer(currentSelection);
+                }
+            }, 1200); 
         }
     } else {
         resetSelection();
@@ -281,21 +290,15 @@ function checkFingerInZone(x, y) {
 }
 
 function resetSelection() {
-    if (isSelecting) return;
     clearTimeout(selectTimer);
     currentSelection = null;
-    document.getElementById("btnA").style.transform = "scale(1)";
-    document.getElementById("btnB").style.transform = "scale(1)";
 }
 
 const hands = new Hands({
     locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
 });
 hands.setOptions({
-    maxNumHands: 1,
-    modelComplexity: 1,
-    minDetectionConfidence: 0.6,
-    minTrackingConfidence: 0.6
+    maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6
 });
 hands.onResults(onResults);
 
@@ -306,5 +309,4 @@ const cameraUtils = new Camera(video, {
 
 startCamera().then(() => {
     cameraUtils.start();
-    showQuestion();
 });
