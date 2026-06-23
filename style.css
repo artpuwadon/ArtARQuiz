@@ -114,3 +114,30 @@ button {
     min-height: 60px;
     text-shadow: 0 0 15px currentColor;
 }
+
+/* สไตล์หน้าเมนู */
+.menu-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+    margin-top: 30px;
+}
+
+.btn-menu {
+    width: 100% !important;
+    max-width: 500px !important;
+    height: 70px !important;
+    font-size: 1.6rem !important;
+    background: linear-gradient(135deg, #11998e, #38ef7d) !important;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 8px 15px rgba(0,255,136,0.2);
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-menu:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 20px rgba(0,255,136,0.4);
+}
