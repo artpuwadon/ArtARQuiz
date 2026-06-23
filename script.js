@@ -121,19 +121,15 @@ const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-function resizeCanvas() {
+function syncCanvas() {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
+
+  // ล้างพื้นหลังดำ
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-// เรียกเมื่อกล้องเริ่มทำงานจริง
-video.addEventListener("loadedmetadata", () => {
-  resizeCanvas();
-});
-
-// เผื่อบาง browser โหลดช้า
-video.addEventListener("play", () => {
-  resizeCanvas();
-});
+video.addEventListener("loadeddata", syncCanvas);
+video.addEventListener("play", syncCanvas);
 
 showQuestion();
