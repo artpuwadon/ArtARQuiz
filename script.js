@@ -72,12 +72,19 @@ function selectCategory(key) {
     });
 }
 
-// ตรวจจับปุ่มบนคีย์บอร์ดเลข 1, 2, 3 เพื่อความสะดวกเวลาครูคุมผ่านโน้ตบุ๊ก
+// ตรวจจับปุ่มบนคีย์บอร์ดเลข 1-0 เพื่อความสะดวกเวลาครูคุมผ่านโน้ตบุ๊ก
 window.addEventListener("keydown", (e) => {
     if (gameState === "MENU") {
         if (e.key === "1") selectCategory("elements");
         if (e.key === "2") selectCategory("colors");
         if (e.key === "3") selectCategory("culture");
+        if (e.key === "4") selectCategory("lines_shapes");
+        if (e.key === "5") selectCategory("thai_art");
+        if (e.key === "6") selectCategory("light_shadow");
+        if (e.key === "7") selectCategory("composition");
+        if (e.key === "8") selectCategory("modern_art");
+        if (e.key === "9") selectCategory("design_app");
+        if (e.key === "0") selectCategory("criticism"); // ชุดที่ 10 กดเลข 0
     }
 });
 
