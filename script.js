@@ -6,64 +6,80 @@ let isSelecting = false;
 let currentSelection = null; 
 let selectTimer = null;
 let particles = [];
-let gameState = "MENU"; // สถานะเกม: MENU หรือ PLAYING
+let gameState = "MENU"; // "MENU" หรือ "PLAYING"
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 function playSound(type) {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(audioCtx.destination);
+    try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
 
-    if (type === 'correct') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-        osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.4);
-    } else if (type === 'wrong') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-        osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.4);
-        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.5);
-    } else if (type === 'tick') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-        osc.start(); osc.stop(audioCtx.currentTime + 0.06);
-    } else if (type === 'win') {
-        [392, 523, 659, 784].forEach((f, i) => {
-            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
-            o.type = 'triangle'; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
-            g.gain.setValueAtTime(0.2, audioCtx.currentTime + i*0.1);
-            g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i*0.1 + 0.5);
-            o.start(audioCtx.currentTime + i*0.1); o.stop(audioCtx.currentTime + i*0.1 + 0.5);
-        });
-    }
+        if (type === 'correct') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        } else if (type === 'wrong') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+        } else if (type === 'tick') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(750, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.06);
+        } else if (type === 'win') {
+            [392, 523, 659, 784].forEach((f, i) => {
+                const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                o.type = 'triangle'; o.frequency.value = f; o.connect(g); g.connect(audioCtx.destination);
+                g.gain.setValueAtTime(0.15, audioCtx.currentTime + i*0.1);
+                g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i*0.1 + 0.5);
+                o.start(audioCtx.currentTime + i*0.1); o.stop(audioCtx.currentTime + i*0.1 + 0.5);
+            });
+        }
+    } catch(e) { console.log("Audio Error"); }
 }
 
-// ฟังก์ชันเลือกหมวดหมู่คำถาม
+// ฟังก์ชันเลือกหมวดหมู่ (เมาส์กด หรือ คีย์บอร์ดกด)
 function selectCategory(key) {
+    if (gameState !== "MENU") return;
+    
     questions = questionSets[key].data;
     document.getElementById("set-title").innerHTML = questionSets[key].title;
     
-    // สลับหน้าจอ
+    // เปลี่ยนหน้าแสดงผล
     document.getElementById("menu-screen").style.display = "none";
     document.getElementById("game-screen").style.display = "block";
     
     gameState = "PLAYING";
     current = 0;
     score = 0;
-    document.getElementById("score").innerHTML = "คะแนน : 0";
     
     playSound('correct');
-    showQuestion();
+    
+    // เริ่มเปิดกล้องและเครื่องมือตรวจจับมือเมื่อเข้าสู่หน้าเล่นเกม
+    startCamera().then(() => {
+        showQuestion();
+    });
 }
+
+// ตรวจจับปุ่มบนคีย์บอร์ดเลข 1, 2, 3 เพื่อความสะดวกเวลาครูคุมผ่านโน้ตบุ๊ก
+window.addEventListener("keydown", (e) => {
+    if (gameState === "MENU") {
+        if (e.key === "1") selectCategory("elements");
+        if (e.key === "2") selectCategory("colors");
+        if (e.key === "3") selectCategory("culture");
+    }
+});
 
 function startTimer() {
     clearInterval(timerInterval);
@@ -147,37 +163,28 @@ function finishGame() {
     else text = "📚 ระดับ: ต้องเติมพลังความรู้เพิ่มด่วน!";
 
     document.getElementById("game-screen").innerHTML = `
-        <h1 style="font-size:4rem;">🎉 จบการแข่งขัน 🎉</h1>
-        <h2 style="font-size:3rem; color:#00f0ff;">คะแนนรวมของคุณคือ ${score} คะแนน</h2>
-        <h2 style="font-size:2.5rem; color:#ffb300;">${text}</h2>
-        <br>
-        <button onclick="location.reload()" style="max-width:300px; height:70px; background:linear-gradient(135deg, #00ff88, #00f0ff); color:#111; font-size:1.8rem; font-weight:bold; border-radius:15px; border:none; cursor:pointer;">
+        <h1 style="font-size:3.5rem;">🎉 จบการแข่งขัน 🎉</h1>
+        <h2 style="font-size:2.8rem; color:#00f0ff; margin: 20px 0;">คะแนนรวมของคุณคือ ${score} คะแนน</h2>
+        <h2 style="font-size:2.2rem; color:#ffb300;">${text}</h2>
+        <br><br>
+        <button onclick="location.reload()" style="width:250px; height:70px; background:linear-gradient(135deg, #00ff88, #00f0ff); color:#111; font-size:1.6rem; font-weight:bold; border-radius:15px; border:none; cursor:pointer;">
  🔄 กลับหน้าหลัก
         </button>
     `;
 }
 
 // ==========================================
-//  ระบบ AR & แอนิเมชันวาดเอฟเฟกต์ลง Canvas
+//  ระบบ AR (MediaPipe) ทำงานเฉพาะหน้าเล่นเกม
 // ==========================================
 const video = document.getElementById("video");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
-// โซนจับคำตอบ A และ B ตอนเล่นเกม
+// กล่องรับคำตอบ AR ซ้าย-ขวาบนภาพวิดีโอ
 const playZones = {
-    A: { x: 50, y: 150, width: 150, height: 200, label: "ชี้ค้างตอบ A" },
-    B: { x: 440, y: 150, width: 150, height: 200, label: "ชี้ค้างตอบ B" }
+    A: { x: 30, y: 130, width: 140, height: 220, label: "ชี้ค้างตอบ A" },
+    B: { x: 470, y: 130, width: 140, height: 220, label: "ชี้ค้างตอบ B" }
 };
-
-// โซนจับเมนูสำหรับหน้าแรก (เรียง 3 ปุ่มแนวตั้งเสมือนบนจอ)
-const menuZones = {
-    elements: { x: 170, y: 80, width: 300, height: 80, label: "ชี้ค้างเลือกชุดที่ 1" },
-    colors:   { x: 170, y: 200, width: 300, height: 80, label: "ชี้ค้างเลือกชุดที่ 2" },
-    culture:  { x: 170, y: 320, width: 300, height: 80, label: "ชี้ค้างเลือกชุดที่ 3" }
-};
-
-// ... (โค้ดส่วนบนคงเดิมไว้จนถึงฟังก์ชัน startCamera) ...
 
 async function startCamera() {
     try {
@@ -185,22 +192,18 @@ async function startCamera() {
             video: { width: 640, height: 480 }, audio: false
         });
         video.srcObject = stream;
-        
-        // เมื่อกล้องเริ่มสตรีมสำเร็จ ให้เริ่มระบบค้นหามือทันที
-        video.addEventListener("playing", () => {
-            syncCanvas();
-            cameraUtils.start();
+        return new Promise((resolve) => {
+            video.onloadedmetadata = () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                cameraUtils.start();
+                resolve();
+            };
         });
     } catch (err) {
-        alert("ไม่สามารถเข้าถึงกล้องได้: " + err.message + "\nกรุณากดยอมรับสิทธิ์เปิดกล้องของบราวเซอร์");
+        alert("กรุณาอนุญาตสิทธิ์เข้าถึงกล้องถ่ายภาพบนบราวเซอร์ก่อนเล่นเกมครับ!");
     }
 }
-
-function syncCanvas() {
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-}
-video.addEventListener("loadedmetadata", syncCanvas);
 
 function createExplosion() {
     for (let i = 0; i < 40; i++) {
@@ -214,28 +217,26 @@ function createExplosion() {
 }
 
 function onResults(results) {
+    if (gameState !== "PLAYING") return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // เลือกใช้โซนตรวจจับตามสถานะปัจจุบันของเกม
-    const activeZones = (gameState === "MENU") ? menuZones : playZones;
-
-    // วาดกล่อง AR ไกด์ไลน์บนจอทีวี
-    for (const key in activeZones) {
-        const zone = activeZones[key];
+    // วาดกล่องโต้ตอบ AR ลอยบนวิดีโอ
+    for (const key in playZones) {
+        const zone = playZones[key];
         let isHovered = (key === currentSelection);
         
-        ctx.fillStyle = isHovered ? "rgba(0, 255, 136, 0.25)" : "rgba(255, 255, 255, 0.1)";
+        ctx.fillStyle = isHovered ? "rgba(0, 255, 136, 0.3)" : "rgba(255, 255, 255, 0.15)";
         ctx.fillRect(zone.x, zone.y, zone.width, zone.height);
         ctx.strokeStyle = isHovered ? "#00ff88" : "#00f0ff";
-        ctx.lineWidth = isHovered ? 5 : 2;
+        ctx.lineWidth = isHovered ? 6 : 2;
         ctx.strokeRect(zone.x, zone.y, zone.width, zone.height);
 
         ctx.fillStyle = "white";
         ctx.font = "bold 18px Arial";
-        ctx.fillText(zone.label, zone.x + 15, zone.y + 45);
+        ctx.fillText(zone.label, zone.x + 12, zone.y + 45);
     }
 
-    // ตรวจจับมือ
+    // ตรวจจับนิ้วชี้
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
         for (const landmarks of results.multiHandLandmarks) {
             const indexTip = landmarks[8];
@@ -250,13 +251,13 @@ function onResults(results) {
             ctx.lineWidth = 3;
             ctx.stroke();
 
-            checkFingerInZone(fingerX, fingerY, activeZones);
+            checkFingerInZone(fingerX, fingerY);
         }
     } else {
         resetSelection();
     }
 
-    // วาดเอฟเฟกต์พลุเฉลิมฉลอง
+    // อนิเมชันพาร์ทิเคิลพลุระเบิด
     particles.forEach((p, index) => {
         p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
         if (p.alpha <= 0) { particles.splice(index, 1); } 
@@ -268,11 +269,11 @@ function onResults(results) {
     });
 }
 
-function checkFingerInZone(x, y, activeZones) {
-    if (isSelecting && gameState === "PLAYING") return;
+function checkFingerInZone(x, y) {
+    if (isSelecting) return;
     let detectedZone = null;
-    for (const key in activeZones) {
-        const zone = activeZones[key];
+    for (const key in playZones) {
+        const zone = playZones[key];
         if (x >= zone.x && x <= zone.x + zone.width && y >= zone.y && y <= zone.y + zone.height) {
             detectedZone = key;
         }
@@ -281,14 +282,9 @@ function checkFingerInZone(x, y, activeZones) {
     if (detectedZone) {
         if (currentSelection !== detectedZone) {
             currentSelection = detectedZone;
-            
             clearTimeout(selectTimer);
             selectTimer = setTimeout(() => {
-                if (gameState === "MENU") {
-                    selectCategory(currentSelection);
-                } else {
-                    checkAnswer(currentSelection);
-                }
+                checkAnswer(currentSelection);
             }, 1200); 
         }
     } else {
@@ -310,9 +306,8 @@ hands.setOptions({
 hands.onResults(onResults);
 
 const cameraUtils = new Camera(video, {
-    onFrame: async () => { await hands.send({ image: video }); },
+    onFrame: async () => { 
+        if(gameState === "PLAYING") await hands.send({ image: video }); 
+    },
     width: 640, height: 480
 });
-
-// เรียกเริ่มเปิดกล้องทันทีที่เปิดหน้าเว็บ
-startCamera();
