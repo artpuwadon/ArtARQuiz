@@ -177,14 +177,22 @@ const menuZones = {
     culture:  { x: 170, y: 320, width: 300, height: 80, label: "ชี้ค้างเลือกชุดที่ 3" }
 };
 
+// ... (โค้ดส่วนบนคงเดิมไว้จนถึงฟังก์ชัน startCamera) ...
+
 async function startCamera() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({
             video: { width: 640, height: 480 }, audio: false
         });
         video.srcObject = stream;
+        
+        // เมื่อกล้องเริ่มสตรีมสำเร็จ ให้เริ่มระบบค้นหามือทันที
+        video.addEventListener("playing", () => {
+            syncCanvas();
+            cameraUtils.start();
+        });
     } catch (err) {
-        console.log("กล้องยังไม่พร้อมใช้งานบนหน้าจอเมนู");
+        alert("ไม่สามารถเข้าถึงกล้องได้: " + err.message + "\nกรุณากดยอมรับสิทธิ์เปิดกล้องของบราวเซอร์");
     }
 }
 
@@ -206,7 +214,6 @@ function createExplosion() {
 }
 
 function onResults(results) {
-    syncCanvas();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // เลือกใช้โซนตรวจจับตามสถานะปัจจุบันของเกม
@@ -307,6 +314,5 @@ const cameraUtils = new Camera(video, {
     width: 640, height: 480
 });
 
-startCamera().then(() => {
-    cameraUtils.start();
-});
+// เรียกเริ่มเปิดกล้องทันทีที่เปิดหน้าเว็บ
+startCamera();
