@@ -1,46 +1,37 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Art Quiz AR</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
 <div class="card">
-    <h1>🎨 เกมโชว์ท้าประลอง ศิลปะ ม.1</h1>
-
-    <div class="score-board">
-        <h3 id="number" style="color: #ffb300;">ข้อที่ 1</h3>
-        <h3 id="score" style="color: #00ff88;">คะแนน : 0</h3>
+    <div id="menu-screen">
+        <h1>🎮 เลือกภารกิจท้าประลอง ม.1</h1>
+        <h3 style="color: #ffb300; margin-bottom: 30px;">(ยกมือใช้ปลายนิ้วชี้เลือก หรือใช้เมาส์คลิกได้เลย!)</h3>
+        <div class="menu-container">
+            <button class="btn-menu" onclick="selectCategory('elements')">ชุดที่ 1: ทัศนธาตุพื้นฐาน</button>
+            <button class="btn-menu" onclick="selectCategory('colors')">ชุดที่ 2: วรรณะสีและอารมณ์</button>
+            <button class="btn-menu" onclick="selectCategory('culture')">ชุดที่ 3: ศิลปวัฒนธรรม</button>
+        </div>
     </div>
 
-    <!-- แถบจับเวลาถอยหลังสุดตื่นเต้น -->
-    <div class="timer-container">
-        <div id="timer-bar"></div>
+    <div id="game-screen" style="display: none;">
+        <h1 id="set-title" style="font-size: 2rem; color: #ff007f;">🎨 เกมตอบคำถาม</h1>
+        <div class="score-board">
+            <h3 id="number" style="color: #ffb300;">ข้อที่ 1</h3>
+            <h3 id="score" style="color: #00ff88;">คะแนน : 0</h3>
+        </div>
+
+        <div class="timer-container">
+            <div id="timer-bar"></div>
+        </div>
+
+        <div class="camera">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <h2 id="question">กำลังโหลดคำถาม...</h2>
+
+        <div class="btn-container">
+            <button id="btnA" onclick="checkAnswer('A')">A</button>
+            <button id="btnB" onclick="checkAnswer('B')">B</button>
+        </div>
+
+        <h2 id="result"></h2>
     </div>
-
-    <div class="camera">
-        <video id="video" autoplay playsinline muted></video>
-        <canvas id="canvas"></canvas>
-    </div>
-
-    <h2 id="question">กำลังโหลดคำถาม...</h2>
-
-    <div class="btn-container">
-        <button id="btnA" onclick="checkAnswer('A')">A</button>
-        <button id="btnB" onclick="checkAnswer('B')">B</button>
-    </div>
-
-    <h2 id="result"></h2>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-<script src="questions.js"></script>
-<script src="script.js"></script>
-  
-</body>
-</html>
