@@ -1,6 +1,6 @@
 body {
     background: linear-gradient(135deg, #1e1e2f, #2a2a40);
-    font-family: 'Kanit', Arial, sans-serif;
+    font-family: Arial, sans-serif;
     text-align: center;
     color: white;
     margin: 0;
@@ -11,7 +11,7 @@ body {
     width: 90%;
     max-width: 900px;
     margin: 20px auto;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(10px);
     padding: 40px;
     border-radius: 30px;
@@ -20,102 +20,12 @@ body {
 }
 
 h1 {
-    font-size: 3rem;
+    font-size: 2.8rem;
     text-shadow: 0 0 20px #ff007f;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
-#question {
-    font-size: 2.5rem;
-    min-height: 80px;
-    margin: 20px 0;
-    color: #00f0ff;
-    text-shadow: 0 0 10px rgba(0,240,255,0.5);
-}
-
-.camera {
-    position: relative;
-    width: 100%;
-    max-width: 560px;
-    margin: 20px auto;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 0 30px rgba(0,0,0,0.8);
-    border: 4px solid #333;
-}
-
-video {
-    width: 100%;
-    display: block;
-    transform: scaleX(-1); /* กลับด้านวิดีโอให้ตรงกับตัวเรา */
-}
-
-#canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10;
-    pointer-events: none;
-}
-
-/* แถบจับเวลาถอยหลัง */
-.timer-container {
-    width: 80%;
-    background: #333;
-    border-radius: 20px;
-    margin: 20px auto;
-    padding: 5px;
-    border: 2px solid #555;
-}
-#timer-bar {
-    width: 100%;
-    height: 25px;
-    background: linear-gradient(90deg, #00ff88, #00f0ff);
-    border-radius: 15px;
-    transition: width 0.1s linear, background 0.5s;
-}
-
-.score-board {
-    display: flex;
-    justify-content: space-around;
-    font-size: 1.8rem;
-    margin: 15px 0;
-}
-
-/* ปุ่มกดจำลองด้านล่าง */
-.btn-container {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-top: 20px;
-}
-button {
-    flex: 1;
-    max-width: 350px;
-    height: 80px;
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: white;
-    border: none;
-    border-radius: 15px;
-    cursor: pointer;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-    transition: all 0.2s;
-}
-#btnA { background: linear-gradient(135deg, #ff416c, #ff4b2b); }
-#btnB { background: linear-gradient(135deg, #4776e6, #8e54e9); }
-
-#result {
-    font-size: 3rem;
-    font-weight: bold;
-    margin-top: 20px;
-    min-height: 60px;
-    text-shadow: 0 0 15px currentColor;
-}
-
-/* สไตล์หน้าเมนู */
+/* หน้าเมนูเลือก */
 .menu-container {
     display: flex;
     flex-direction: column;
@@ -123,21 +33,107 @@ button {
     align-items: center;
     margin-top: 30px;
 }
-
 .btn-menu {
     width: 100% !important;
     max-width: 500px !important;
-    height: 70px !important;
+    height: 75px !important;
     font-size: 1.6rem !important;
+    font-weight: bold;
     background: linear-gradient(135deg, #11998e, #38ef7d) !important;
-    color: white;
-    border: none;
-    border-radius: 20px;
+    color: white !important;
+    border: none !important;
+    border-radius: 20px !important;
+    cursor: pointer;
     box-shadow: 0 8px 15px rgba(0,255,136,0.2);
-    transition: all 0.2s ease-in-out;
+    transition: transform 0.2s;
 }
-
 .btn-menu:hover {
     transform: scale(1.05);
-    box-shadow: 0 12px 20px rgba(0,255,136,0.4);
+}
+
+/* ส่วนแสดงผลเกม */
+#question {
+    font-size: 2.3rem;
+    min-height: 70px;
+    margin: 20px 0;
+    color: #00f0ff;
+    text-shadow: 0 0 10px rgba(0,240,255,0.3);
+}
+
+.camera {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    margin: 15px auto;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0,0,0,0.7);
+    border: 4px solid #444;
+}
+video {
+    width: 100%;
+    display: block;
+    transform: scaleX(-1); /* Mirror ภาพให้ตรงกับตัวเรา */
+}
+#canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none; /* สำคัญ: ปล่อยให้เมาส์คลิกทะลุได้ */
+}
+
+/* แถบจับเวลา */
+.timer-container {
+    width: 90%;
+    background: #222;
+    border-radius: 20px;
+    margin: 15px auto;
+    padding: 4px;
+    border: 2px solid #444;
+}
+#timer-bar {
+    width: 100%;
+    height: 20px;
+    background: linear-gradient(90deg, #00ff88, #00f0ff);
+    border-radius: 15px;
+    transition: width 0.1s linear;
+}
+
+.score-board {
+    display: flex;
+    justify-content: space-around;
+    font-size: 1.8rem;
+    margin: 10px 0;
+}
+
+.btn-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+}
+.btn-container button {
+    flex: 1;
+    max-width: 350px;
+    height: 75px;
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+    transition: transform 0.1s;
+}
+#btnA { background: linear-gradient(135deg, #ff416c, #ff4b2b); }
+#btnB { background: linear-gradient(135deg, #4776e6, #8e54e9); }
+
+#result {
+    font-size: 2.8rem;
+    font-weight: bold;
+    margin-top: 15px;
+    min-height: 50px;
 }
