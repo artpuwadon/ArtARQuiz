@@ -117,4 +117,23 @@ alert(err.name+"\n"+err.message);
 
 startCamera();
 
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+}
+
+// เรียกเมื่อกล้องเริ่มทำงานจริง
+video.addEventListener("loadedmetadata", () => {
+  resizeCanvas();
+});
+
+// เผื่อบาง browser โหลดช้า
+video.addEventListener("play", () => {
+  resizeCanvas();
+});
+
 showQuestion();
