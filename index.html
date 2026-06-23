@@ -9,14 +9,21 @@
 <body>
 
 <div class="card">
-    <div id="menu-screen">
+<div id="menu-screen">
         <h1>🎮 เกมโชว์ท้าประลอง ศิลปะ ม.1</h1>
-        <h3 style="color: #ffb300; margin-bottom: 30px;">กรุณาเลือกภารกิจเพื่อเริ่มต้น (ใช้เมาส์คลิก หรือกดเลข 1, 2, 3 บนคีย์บอร์ด)</h3>
+        <h3 style="color: #ffb300; margin-bottom: 20px;">กรุณาเลือกภารกิจเพื่อเริ่มต้น (ใช้เมาส์คลิก หรือกดคีย์บอร์ดตามเลขชุดคำถาม)</h3>
         
-        <div class="menu-container">
-            <button class="btn-menu" onclick="selectCategory('elements')">กด [ 1 ] : ชุดที่ 1 ทัศนธาตุพื้นฐาน</button>
-            <button class="btn-menu" onclick="selectCategory('colors')">กด [ 2 ] : ชุดที่ 2 วรรณะสีและอารมณ์</button>
-            <button class="btn-menu" onclick="selectCategory('culture')">กด [ 3 ] : ชุดที่ 3 ศิลปวัฒนธรรม</button>
+        <div class="menu-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; max-width: 800px; margin: auto;">
+            <button class="btn-menu" onclick="selectCategory('elements')">[ 1 ] ทัศนธาตุและพื้นฐาน</button>
+            <button class="btn-menu" onclick="selectCategory('colors')">[ 2 ] วรรณะสีและอารมณ์</button>
+            <button class="btn-menu" onclick="selectCategory('culture')">[ 3 ] ศิลปวัฒนธรรม</button>
+            <button class="btn-menu" onclick="selectCategory('lines_shapes')">[ 4 ] เส้นและรูปร่าง</button>
+            <button class="btn-menu" onclick="selectCategory('thai_art')">[ 5 ] มรดกศิลป์ไทย</button>
+            <button class="btn-menu" onclick="selectCategory('light_shadow')">[ 6 ] แสนเงาและระยะภาพ</button>
+            <button class="btn-menu" onclick="selectCategory('composition')">[ 7 ] การจัดองค์ประกอบ</button>
+            <button class="btn-menu" onclick="selectCategory('modern_art')">[ 8 ] ลัทธิศิลปะตะวันตก</button>
+            <button class="btn-menu" onclick="selectCategory('design_app')">[ 9 ] ศิลปะประยุกต์-กราฟิก</button>
+            <button class="btn-menu" onclick="selectCategory('criticism')">[ 0 ] การวิจารณ์ศิลปะ</button>
         </div>
     </div>
 
